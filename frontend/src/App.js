@@ -11,7 +11,7 @@ function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   
-  //  Load posenet
+  // load posenet
   const runPosenet = async () => {
     const net = await posenet.load({
       inputResolution: { width: 640, height: 480 },
@@ -19,7 +19,7 @@ function App() {
     });
     setInterval(() => {
       detect(net);
-    }, 1000000);
+    }, 2000);
   };
 
   const detect = async (net) => {
@@ -41,11 +41,11 @@ function App() {
       drawCanvas(pose, video, videoWidth, videoHeight, canvasRef);
 
       try {
-        // Send pose data to back-end for analysis
+        // send data to flask server
         const response = await axios.post('http://localhost:5000/analyze', { pose: pose.keypoints });
         const angles = response.data;
 
-        // Provide feedback based on angles
+        // feedback from backend calcs
         giveFeedback(angles);
       } catch (error) {
         console.error("There was an error sending the data!", error);
@@ -63,7 +63,7 @@ function App() {
   };
 
   const giveFeedback = (angles) => {
-    // Implement feedback logic based on joint angles
+    // TO DO: feedback
     console.log('Feedback:', angles);
   };
 

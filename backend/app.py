@@ -19,16 +19,13 @@ def extract_keypoints(pose, part_name):
 
 
 def calculate_joint_angles(pose):
-    # Extract keypoints
     left_hip = extract_keypoints(pose, "leftHip")
     left_knee = extract_keypoints(pose, "leftKnee")
     left_ankle = extract_keypoints(pose, "leftAnkle")
 
-    # Ensure all keypoints are found
     if left_hip is None or left_knee is None or left_ankle is None:
         return {"error": "Could not find all necessary keypoints"}
 
-    # Calculate angles
     vec_thigh = left_hip - left_knee
     vec_shin = left_ankle - left_knee
     cos_theta = np.dot(vec_thigh, vec_shin) / (
