@@ -5,35 +5,45 @@ import logging
 
 app = Flask(__name__)
 
-# logging.basicConfig(level=logging.DEBUG)
-
+logging.basicConfig(level=logging.DEBUG)
 
 CORS(app)
+
+CONFIDENCE_THRESHOLD = 0.6
 
 
 def extract_keypoints(pose, part_name):
     for keypoint in pose:
         if keypoint["part"] == part_name:
+            if keypoint["score"] < CONFIDENCE_THRESHOLD:
+                return None
             return np.array([keypoint["position"]["x"], keypoint["position"]["y"]])
     return None
 
 
 def calculate_joint_angles(pose):
-    left_hip = extract_keypoints(pose, "leftHip")
-    left_knee = extract_keypoints(pose, "leftKnee")
-    left_ankle = extract_keypoints(pose, "leftAnkle")
+    hip = extract_keypoints(pose, "leftHip")
+    knee = extract_keypoints(pose, "leftKnee")
+    ankle = extract_keypoints(pose, "leftAnkle")
+    shoulder = extract_keypoints(pose, "leftShoulder")
 
-    if left_hip is None or left_knee is None or left_ankle is None:
+    if hip is None or knee is None or ankle is None or shoulder is None:
         return {"error": "Could not find all necessary keypoints"}
 
-    vec_thigh = left_hip - left_knee
-    vec_shin = left_ankle - left_knee
-    cos_theta = np.dot(vec_thigh, vec_shin) / (
+    vec_thigh = hip - knee
+    vec_shin = ankle - knee
+    cos_theta_knee = np.dot(vec_thigh, vec_shin) / (
         np.linalg.norm(vec_thigh) * np.linalg.norm(vec_shin)
     )
-    angle = np.arccos(cos_theta) * (180 / np.pi)
+    left_knee_angle = np.arccos(cos_theta_knee) * (180 / np.pi)
 
-    return {"left_knee_angle": angle}
+    vec_torso = shoulder - hip
+    cos_theta_hip = np.dot(vec_thigh, vec_torso) / (
+        np.linalg.norm(vec_thigh) * np.linalg.norm(vec_torso)
+    )
+    left_hip_angle = np.arccos(cos_theta_hip) * (180 / np.pi)
+
+    return {"left_knee_angle": left_knee_angle, "left_hip_angle": left_hip_angle}
 
 
 @app.route("/analyze", methods=["POST"])

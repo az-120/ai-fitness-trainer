@@ -1,25 +1,31 @@
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import * as tf from "@tensorflow/tfjs";
 import * as posenet from "@tensorflow-models/posenet";
-import Webcam from "react-webcam";
 import { drawKeypoints, drawSkeleton } from "./utilities";
-import axios from 'axios';
 import { flipPoseHorizontal } from "@tensorflow-models/posenet/dist/util";
+import axios from 'axios';
+import Webcam from "react-webcam";
 
 function App() {
+  const [selectedExercise, setSelectedExercise] = useState(null);
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
+
+  const handleExerciseSelect = (exercise) => {
+    setSelectedExercise(exercise);
+  };
   
   // load posenet
   const runPosenet = async () => {
     const net = await posenet.load({
-      inputResolution: { width: 640, height: 480 },
+      inputResolution: { width: 1280, height: 720 },
       scale: 0.5,
-    });
+    }
+  );
     setInterval(() => {
       detect(net);
-    }, 2000);
+    }, 2000); // lower this later
   };
 
   const detect = async (net) => {
@@ -35,8 +41,8 @@ function App() {
       video.width = videoWidth
       video.height = videoHeight
 
-      const pose = await net.estimateSinglePose(video, {flipPoseHorizontal: false});
-      console.log(pose);
+      const pose = await net.estimateSinglePose(video, {flipPoseHorizontal: true});
+      // console.log(pose);
 
       drawCanvas(pose, video, videoWidth, videoHeight, canvasRef);
 
@@ -68,42 +74,50 @@ function App() {
   };
 
   useEffect(() => {
-    runPosenet();
-  }, []);
+    if (selectedExercise) {
+      runPosenet();
+    }
+  }, [selectedExercise]);
 
 
   return (
     <div className="App">
       <header className="App-header">
-        <Webcam ref={webcamRef}
-          screenshotFormat="image/png"
-          audio={false}
-          style={{
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: 9,
-            width: 640,
-            height: 480,
-          }}
-        />
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: 9,
-            width: 640,
-            height: 480,
-          }}
-        />
+        {!selectedExercise ? (
+          <button className="exercise-button" onClick={() => handleExerciseSelect('squat')}>Select Squat</button>
+        ) : (
+          <>
+            <Webcam ref={webcamRef}
+              screenshotFormat="image/png"
+              audio={false}
+              style={{
+                position: "absolute",
+                marginLeft: "auto",
+                marginRight: "auto",
+                left: 0,
+                right: 0,
+                textAlign: "center",
+                zindex: 9,
+                width: 1280,
+                height: 720,
+              }}
+            />
+            <canvas
+              ref={canvasRef}
+              style={{
+                position: "absolute",
+                marginLeft: "auto",
+                marginRight: "auto",
+                left: 0,
+                right: 0,
+                textAlign: "center",
+                zindex: 9,
+                width: 1280,
+                height: 720,
+              }}
+            />
+          </>
+        )}
       </header>
     </div>
   );
